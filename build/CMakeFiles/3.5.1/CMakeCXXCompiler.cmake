@@ -64,5 +64,5 @@ endif()
 
 
 set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "stdc++;m;c")
-set(CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES "/opt/conda/lib/gcc/x86_64-pc-linux-gnu/7.2.0;/opt/conda/lib/gcc;/lib64;/opt/conda/lib;/usr/local/lib/x86_64-linux-gnu;/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu;/usr/local/lib64;/usr/lib64;/usr/local/lib;/lib;/usr/lib;/usr/x86_64-linux-gnu/lib64;/usr/x86_64-linux-gnu/lib")
+set(CMAKE_CXX_IMPLICIT_LINK_DIRECTORIES "/opt/conda/lib/gcc/x86_64-pc-linux-gnu/7.2.0;/opt/conda/lib/gcc;/lib64;/usr/lib64;/opt/conda/lib;/usr/local/lib/x86_64-linux-gnu;/lib/x86_64-linux-gnu;/usr/lib/x86_64-linux-gnu;/usr/local/lib64;/usr/local/lib;/lib;/usr/lib;/usr/x86_64-linux-gnu/lib64;/usr/x86_64-linux-gnu/lib")
 set(CMAKE_CXX_IMPLICIT_LINK_FRAMEWORK_DIRECTORIES "")
