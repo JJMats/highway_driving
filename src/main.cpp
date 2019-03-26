@@ -57,7 +57,7 @@ int main() {
   const double MAX_JERK = 10.0; // m/s^3
   const double UPDATE_RATE = 0.02; // 50 Hz
   double max_accel_increment = MAX_JERK * UPDATE_RATE; // m/s^2, limits acceleration change between update events to maximum allowable jerk
-  double safe_following_distance = 20.0; // meters
+  double safe_following_distance = 25.0; // meters
   double ref_v = 0.0; // target reference velocity
   int lane = 1; // Start in the middle lane
   
@@ -154,11 +154,11 @@ int main() {
               // The object is in the same lane as the ego vehicle, verify that it is in the forward direction
               //  and that it is further away than a safe following distance.
               object_in_lane = s_diff_2 > 0 && s_diff_2 < safe_following_distance; // ? true : false;
-            }else if(object_lane_id < lane && !object_to_left){
+            }else if(object_lane_id == lane - 1 && !object_to_left){
               // The object is in the lane to the left of the ego vehicle. Determine if it is beyond a safe following distance
               //   fore and aft.
               object_to_left = abs(s_diff_2) < safe_following_distance; // ? true : false;
-            }else if(object_lane_id > lane && !object_to_right){
+            }else if(object_lane_id == lane + 1 && !object_to_right){
               // The object is in the lane to the right of the ego vehicle. Determine if it is beyond a safe following distance
               //   fore and aft.
               object_to_right = abs(s_diff_2) < safe_following_distance; // ? true : false;
@@ -166,6 +166,7 @@ int main() {
           }
 
           double velocity_diff = 0.0;
+
           // **** Future plan: Build in cost function here
           if(object_in_lane){
             if(!object_to_left && lane > 0){
