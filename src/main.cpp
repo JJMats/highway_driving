@@ -49,23 +49,19 @@ int main() {
     map_waypoints_s.push_back(s);
     map_waypoints_dx.push_back(d_x);
     map_waypoints_dy.push_back(d_y);
-  }
+  } 
   
-  // Start in lane 1
-  int lane = 1;
-  
-  // Set the target reference velocity
-  double ref_v = 0.0; //was 49.5 MPH
-  double ref_accel = 0.0; // reference acceleration rate
+  // Set the initial constraints  
   const double SPEED_LIMIT = 49.5; // * 0.44704; // meters per second
-  //double safe_following_distance = 1.49; // meters per meters/sec   //0.45; // meters per mph
-  double safe_following_distance = 30.0; // meters
   const double MAX_ACCEL = 10.0; // m/s^2
   const double MAX_JERK = 10.0; // m/s^3
   const double UPDATE_RATE = 0.02; // 50 Hz
   double max_accel_increment = MAX_JERK * UPDATE_RATE; // m/s^2, limits acceleration change between update events to maximum allowable jerk
-    
-  h.onMessage([&ref_v,&ref_accel,&SPEED_LIMIT,&safe_following_distance,&MAX_ACCEL,&MAX_JERK,&max_accel_increment,
+  double safe_following_distance = 20.0; // meters
+  double ref_v = 0.0; // target reference velocity
+  int lane = 1; // Start in the middle lane
+  
+  h.onMessage([&ref_v,&SPEED_LIMIT,&safe_following_distance,&MAX_ACCEL,&MAX_JERK,&max_accel_increment,
                &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy,&lane]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -93,12 +89,7 @@ int main() {
           double car_yaw = j[1]["yaw"];
           double car_speed = j[1]["speed"];
           
-          // Convert car_speed to meters per second
-          //car_speed *= 0.44704;
-          std::cout << std::endl << "Vehicle speed (m/s): " << car_speed << "; x,y: " << car_x << "," << car_y << "; s,d: " << car_s << "," << car_d << "; yaw: " << car_yaw << std::endl;
-
-          // Convert reference velocity back to meters per second
-          //ref_v *= 0.44704;
+          //std::cout << std::endl << "Vehicle speed (m/s): " << car_speed << "; x,y: " << car_x << "," << car_y << "; s,d: " << car_s << "," << car_d << "; yaw: " << car_yaw << std::endl;
           
           // Previous path data given to the Planner
           auto previous_path_x = j[1]["previous_path_x"];
@@ -111,36 +102,22 @@ int main() {
           //   of the road.
           auto sensor_fusion = j[1]["sensor_fusion"];
 
-          int prev_size = previous_path_x.size();
+          int prev_size = previous_path_x.size();          
           
-          // Sensor Fusion
+          // Use prior path's end point for prediction if it is available
           if(prev_size > 0){
             car_s = end_path_s;
-            std::cout << "Adjusted car_s: " << car_s << std::endl;
           }
           
-          //bool too_close = false;
-          
-          double ref_v_adjustment = 0.0;
-          
-          // Run through all objects in the sensor_fusion vector and 
-          //   find each object's location and reference velocity to
-          //   compare to the ego vehicle
-          std::cout << "Sensor_fusion.size(): " << sensor_fusion.size() << std::endl;
-          
-          //double dist_to_next_followed_vehicle = std::numeric_limits<double>::max();
-          //int next_followed_vehicle_index = -1;
-          //double next_followed_vehicle_speed = 0.0;
-
+          // Sensor Fusion
+          // Run through all objects in the sensor_fusion vector and find each object's location
+          //   and reference velocity to compare to the ego vehicle. Set flags for object
+          //   location relative to the vehicle.
           bool object_in_lane = false;
           bool object_to_left = false;
           bool object_to_right = false;
           
           for(int i=0; i < sensor_fusion.size(); ++i){
-            //if(object_in_lane && object_to_left && object_to_right){
-              // Short circuit if all flags are set
-            //  break;
-            //}
             
             // Determine from the Frenet d coordinate which lane the object is in
             float d = sensor_fusion[i][6];
@@ -160,41 +137,36 @@ int main() {
             }
 
             // Determine from the Frenet d coordinate if a car is in the current lane
-            //if(d < (2+4*lane+2) && d > (2+4*lane-2)){
             double vx = sensor_fusion[i][3];
             double vy = sensor_fusion[i][4];
             double check_speed = sqrt(vx*vx+vy*vy); // meters per second
             double check_car_s = sensor_fusion[i][5]; // meters
             double s_diff = check_car_s - car_s;
               
-            std::cout << "Vehicle id: " << sensor_fusion[i][0] << "; speed: " << check_speed << "; s,d position: " << check_car_s << "," << d << "; lane id: " << object_lane_id << "; s_diff: " << s_diff << std::endl;
+            //std::cout << "Vehicle id: " << sensor_fusion[i][0] << "; speed: " << check_speed << "; s,d position: " << check_car_s << "," << d << "; lane id: " << object_lane_id << "; s_diff: " << s_diff << std::endl;
               
             // If utilizing previous points, this can project an s value outwards in future time
             check_car_s += ((double)prev_size * 0.02 * check_speed);
-            //double safe_following_distance = 30.0; // meters
+
             double s_diff_2 = check_car_s - car_s;
-            std::cout << "s_diff: " << s_diff << "; s_diff_2:" << s_diff_2 << std::endl;
               
             if(object_lane_id == lane && !object_in_lane){
               // The object is in the same lane as the ego vehicle, verify that it is in the forward direction
               //  and that it is further away than a safe following distance.
               object_in_lane = s_diff_2 > 0 && s_diff_2 < safe_following_distance; // ? true : false;
-              std::cout << "Object in lane: " << object_in_lane << std::endl;
             }else if(object_lane_id < lane && !object_to_left){
               // The object is in the lane to the left of the ego vehicle. Determine if it is beyond a safe following distance
               //   fore and aft.
               object_to_left = abs(s_diff_2) < safe_following_distance; // ? true : false;
-              std::cout << "Object to left: " << object_to_left << std::endl;
             }else if(object_lane_id > lane && !object_to_right){
               // The object is in the lane to the right of the ego vehicle. Determine if it is beyond a safe following distance
               //   fore and aft.
               object_to_right = abs(s_diff_2) < safe_following_distance; // ? true : false;
-              std::cout << "Object to right: " << object_to_right << std::endl;
             }
           }
 
           double velocity_diff = 0.0;
-          // *** Build in cost function here
+          // **** Future plan: Build in cost function here
           if(object_in_lane){
             if(!object_to_left && lane > 0){
               // Change lanes to the left
@@ -203,7 +175,6 @@ int main() {
               // Change lanes to the right
               lane++;
             }else{
-              //velocity_diff -= MAX_ACCEL;
               velocity_diff -= max_accel_increment;
             }
           }else{
@@ -216,11 +187,9 @@ int main() {
             
             // Increase speed to meet the speed limit
             if(ref_v < SPEED_LIMIT){
-              //velocity_diff += MAX_ACCEL;
               velocity_diff += max_accel_increment;
             }
-          }
-              
+          }              
 
           /**
            * TODO: define a path made up of (x,y) points that the car will visit
@@ -313,19 +282,17 @@ int main() {
 
             // Fill the remainder of the path planner after appending the previous points.
             int output_point_count = 50;
-            for(int i = 1; i < output_point_count - prev_size; ++i){
+            for(int i = 1; i < output_point_count - prev_size; ++i){              
+              // **** Future plan: It may be better to run through and check to see if any of these points are too far apart,
+              // ****  instead of projecting the spline onto a triangle
 
-              // ****** Adding and subtracting from reference velocity here would be more efficient ******
-              // ****** It may be better to run through and check to see if any of these points are too far apart,
-              // ******  instead of projecting the spline onto a triangle
-
+              // Add and subtract from reference velocity for efficiency
               ref_v += velocity_diff;
               if (ref_v >= SPEED_LIMIT){
                 ref_v = SPEED_LIMIT;
               }else if(ref_v < max_accel_increment){
                 ref_v = max_accel_increment;
               }
-              //ref_v = ref_v >= SPEED_LIMIT ? SPEED_LIMIT : ref_v;              
 
               double N = target_dist / (0.02 * ref_v / 2.23694);
               double x_point = x_add_on + target_x / N;
