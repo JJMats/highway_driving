@@ -57,11 +57,13 @@ int main() {
   const double MAX_JERK = 10.0; // m/s^3
   const double UPDATE_RATE = 0.02; // 50 Hz
   double max_accel_increment = MAX_JERK * UPDATE_RATE; // m/s^2, limits acceleration change between update events to maximum allowable jerk
-  double safe_following_distance = 25.0; // meters
+  double safe_following_distance_front = 25.0; // meters
+  double safe_following_distance_rear = -15.0; // meters
   double ref_v = 0.0; // target reference velocity
   int lane = 1; // Start in the middle lane
   
-  h.onMessage([&ref_v,&SPEED_LIMIT,&safe_following_distance,&MAX_ACCEL,&MAX_JERK,&max_accel_increment,
+  h.onMessage([&ref_v,&SPEED_LIMIT,&safe_following_distance_front,&safe_following_distance_rear,
+               &MAX_ACCEL,&MAX_JERK,&max_accel_increment,
                &map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy,&lane]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -149,19 +151,19 @@ int main() {
             check_car_s += ((double)prev_size * 0.02 * check_speed);
 
             double s_diff_2 = check_car_s - car_s;
-              
+            
             if(object_lane_id == lane && !object_in_lane){
               // The object is in the same lane as the ego vehicle, verify that it is in the forward direction
               //  and that it is further away than a safe following distance.
-              object_in_lane = s_diff_2 > 0 && s_diff_2 < safe_following_distance; // ? true : false;
+              object_in_lane = s_diff_2 > 0 && s_diff_2 < safe_following_distance_front; // ? true : false;
             }else if(object_lane_id == lane - 1 && !object_to_left){
               // The object is in the lane to the left of the ego vehicle. Determine if it is beyond a safe following distance
               //   fore and aft.
-              object_to_left = abs(s_diff_2) < safe_following_distance; // ? true : false;
+              object_to_left = s_diff_2 < safe_following_distance_front && s_diff_2 > safe_following_distance_rear;
             }else if(object_lane_id == lane + 1 && !object_to_right){
               // The object is in the lane to the right of the ego vehicle. Determine if it is beyond a safe following distance
               //   fore and aft.
-              object_to_right = abs(s_diff_2) < safe_following_distance; // ? true : false;
+              object_to_right = s_diff_2 < safe_following_distance_front && s_diff_2 > safe_following_distance_rear;
             }
           }
 

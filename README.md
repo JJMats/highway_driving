@@ -144,20 +144,20 @@ still be compilable with cmake and make./
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
 
-## Reflection
+### Reflection
 
-To begin the path generation model, the code lines 21-52 of the main() function in /src/main.cpp starts by parsing the map data from the provided /data/highway_map.csv file. This contains waypoint information of the center of the track, for its entire length. This data will be used to zero the d-coordinate of the Frenet coordinate system for lane position identification. The waypoint information is stored in individual vectors for the x, y, s, dx, and dy values.
+To begin the path generation model, the code lines 21-52 of the main() function in <em>/src/main.cpp<em> starts by parsing the map data from the provided <em>/data/highway_map.csv<em> file. This contains waypoint information of the center of the track, for its entire length. This data will be used to zero the d-coordinate of the Frenet coordinate system for lane position identification. The waypoint information is stored in individual vectors for the x, y, s, dx, and dy values.
 
-Next, on code lines 54-62, initial variables and constants were defined to constrain the model maximums for vehicle speed limit (SPEED_LIMIT), maximum acceleration (MAX_ACCEL), maximum jerk (MAX_JERK), update rate (UPDATE_RATE). Variables were defined for the acceleration increment (max_accel_increment) that would provide a jerk value that is within the MAX_JERK threshold, a safe following distance (safe_following_distance) to define the distance from the next vehicle that should be maintained to prevent forward collisions, the reference velocity (ref_v), which will store the vehicle’s target velocity, and the initial lane to begin in (lane), which is the middle lane on the right side of the road (index 1). These initial values are passed to the web socket hub’s “onMessage” event handler on code line 64.
+Next, on code lines 55-63, initial variables and constants were defined to constrain the model maximums for vehicle speed limit (SPEED_LIMIT), maximum acceleration (MAX_ACCEL), maximum jerk (MAX_JERK), update rate (UPDATE_RATE). Variables were defined for the acceleration increment (max_accel_increment) that would provide a jerk value that is within the MAX_JERK threshold, a safe following distance (safe_following_distance) to define the distance from the next vehicle that should be maintained to prevent forward collisions, the reference velocity (ref_v), which will store the vehicle’s target velocity, and the initial lane to begin in (lane), which is the middle lane on the right side of the road (index 1). These initial values are passed to the web socket hub’s “onMessage” event handler on code line 65.
 
-Inside of the “onMessage” event handler, the ego vehicle’s state and path values, as well as sensor fusion data are parsed from the incoming stream on code lines 85-103. The sensor fusion data is analyzed next on code lines 116-166. Boolean flags are defined to reflect the existence of objects around the ego vehicle that will affect the decision of the path planner. Each object in the sensor_fusion vector is iterated through to determine:
+Inside of the “onMessage” event handler, the ego vehicle’s state and path values, as well as sensor fusion data are parsed from the incoming stream on code lines 87-105. The sensor fusion data is analyzed next on code lines 118-168. Boolean flags are defined to reflect the existence of objects around the ego vehicle that will affect the decision of the path planner. Each object in the sensor_fusion vector is iterated through to determine:
 
 -	Which lane the object is in, calculated by the d-coordinate
 -	The object’s velocity, s-coordinate, and the distance between the ego vehicle and the object
 -	If the object is in the same lane as the ego vehicle, and if the ego vehicle is within a specified following distance range.
 -	If the object is in a lane to the left or right of the ego vehicle, within a specified distance drawn fore and aft of the object that would create an unsafe lane change condition
 
-Once the flags have been set, they can be used to decide the next behavior of the ego vehicle. This is performed on code lines 168-192. One of four behaviors can be selected:
+Once the flags have been set, they can be used to decide the next behavior of the ego vehicle. This is performed on code lines 170-195. One of four behaviors can be selected:
 -	Change lanes to the left – If the object is in the current lane and the left lane is clear
 -	Change lanes to the right – If the object is in the current lane and the right lane is clear
 -	Decrease speed – If the object is in the current lane, but the left and right lanes are blocked
@@ -165,15 +165,15 @@ Once the flags have been set, they can be used to decide the next behavior of th
 
 Adjustments to the vehicle speed are clamped to the maximum acceleration and jerk limits set forth by the project, which are 10 m/s^2 and 10 m/s^3, respectively. The vehicle will also move back to the center lane when the center lane is clear to allow for additional freedom in lane selection upon reaching the next object, and to allow for safer driving conditions as the left lane is typically used for passing.
 
-After the next behavior of the vehicle has been decided, it can then be implemented by the path planner. This is performed on code lines 200-315. A path must be established for the vehicle to visit at the specified update rate of 50Hz. The “Cubic Spline Interpolation” library (https://kluge.in-chemnitz.de/opensource/spline) was utilized because it provided a simple method of generating a smooth path that is desired for the vehicle to follow.
+After the next behavior of the vehicle has been decided, it can then be implemented by the path planner. This is performed on code lines 203-318. A path must be established for the vehicle to visit at the specified update rate of 50Hz. The “Cubic Spline Interpolation” library (https://kluge.in-chemnitz.de/opensource/spline) was utilized because it provided a simple method of generating a smooth path that is desired for the vehicle to follow.
 
-Vectors of x and y waypoints are created and filled with two points from the vehicle’s previous path (code lines 200-235). If the path does not contain two previous path points, a new trajectory of the vehicle can be calculated from the ego vehicle’s current position and heading angle. The new trajectory’s starting and ending coordinates can then be used.
+Vectors of x and y waypoints are created and filled with two points from the vehicle’s previous path (code lines 203-238). If the path does not contain two previous path points, a new trajectory of the vehicle can be calculated from the ego vehicle’s current position and heading angle. The new trajectory’s starting and ending coordinates can then be used.
 
-Next on code lines 239-250, evenly spaced points are created in front of the vehicle at a distance of 30, 60, and 90 meters. These are generated in the Frenet coordinate system, so the s- and d-coordinates are then passed to the getXY() function to perform a shift and a rotation that produces x- and y-coordinates for the simulator.
+Next on code lines 242-253, evenly spaced points are created in front of the vehicle at a distance of 30, 60, and 90 meters. These are generated in the Frenet coordinate system, so the s- and d-coordinates are then passed to the getXY() function to perform a shift and a rotation that produces x- and y-coordinates for the simulator.
 
-A spline is created, and the points vectors are then passed to the spline set_points() function (code lines 264-265). On code lines 268-275, vectors are created for the path planner x and y-values, and all of the previous path points are appended to them. It is then necessary to generate additional points for the path planner to follow, based upon the selected behavior. 
+A spline is created, and the points vectors are then passed to the spline set_points() function (code lines 267-268). On code lines 271-278, vectors are created for the path planner x and y-values, and all of the previous path points are appended to them. It is then necessary to generate additional points for the path planner to follow, based upon the selected behavior. 
 
-Code lines 290-295 determine the velocity of the vehicle for each point. It is helpful to perform the velocity adjustment here, per point, as it allows for smoother acceleration transitions. On code lines 307-314, the new velocity and lane position points are converted to x and y-coordinates, and then added to the next_x_vals and next_y_vals vectors for a total of 50 points. These vectors are then passed to the simulator to follow.
+Code lines 293-298 determine the velocity of the vehicle for each point. It is helpful to perform the velocity adjustment here, per point, as it allows for smoother acceleration transitions. On code lines 310-317, the new velocity and lane position points are converted to x and y-coordinates, and then added to the next_x_vals and next_y_vals vectors for a total of 50 points. These vectors are then passed to the simulator to follow.
 
 After multiple simulations, the vehicle is able to meet the rubric criteria for:
 -	Driving at least 4.32 miles without an incident
@@ -184,9 +184,9 @@ After multiple simulations, the vehicle is able to meet the rubric criteria for:
 -	The ability for the vehicle to change lanes
 
 
-##Future Plans
+## Future Plans
 
 When additional time can be committed to this project, there is some desired functionality that would be beneficial to implement:
 -	Adjust vehicle speed proportionally to smooth the approach to a vehicle ahead and ultimately speed match at a safe following distance for the target speed.
--	Implement cost functions for lane change decisions
+-	Implement cost functions for lane change decisions and prevent lane change confusion when vehicles are all travelling at the same speed.
 -	Determine a safe vehicle speed for lane changes to prevent forward collisions
