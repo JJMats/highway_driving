@@ -143,8 +143,9 @@ still be compilable with cmake and make./
 ## How to write a README
 A well written README file can enhance your project and portfolio.  Develop your abilities to create professional README files by completing [this free course](https://www.udacity.com/course/writing-readmes--ud777).
 
+---
 
-### Reflection
+## Reflection
 
 To begin the path generation model, the code lines 21-52 of the main() function in <em>/src/main.cpp</em> starts by parsing the map data from the provided <em>/data/highway_map.csv</em> file. This contains waypoint information of the center of the track, for its entire length. This data will be used to zero the d-coordinate of the Frenet coordinate system for lane position identification. The waypoint information is stored in individual vectors for the x, y, s, dx, and dy values.
 
@@ -184,7 +185,7 @@ After multiple simulations, the vehicle is able to meet the rubric criteria for:
 -	The ability for the vehicle to change lanes
 
 
-## Future Plans
+### Future Plans
 
 When additional time can be committed to this project, there is some desired functionality that would be beneficial to implement:
 -	Adjust vehicle speed proportionally to smooth the approach to a vehicle ahead and ultimately speed match at a safe following distance for the target speed.
