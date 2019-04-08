@@ -191,3 +191,7 @@ When additional time can be committed to this project, there is some desired fun
 -	Adjust vehicle speed proportionally to smooth the approach to a vehicle ahead and ultimately speed match at a safe following distance for the target speed.
 -	Implement cost functions for lane change decisions and prevent lane change confusion when vehicles are all travelling at the same speed.
 -	Determine a safe vehicle speed for lane changes to prevent forward collisions
+
+## License
+
+The content of this repository is licensed under an <a href="https://choosealicense.com/licenses/mit">MIT License</a>.
